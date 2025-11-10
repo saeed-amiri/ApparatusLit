@@ -10,6 +10,10 @@ import seaborn as sns
 import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix
 
 
 def mk_pages(pages: list[str]) -> str:
@@ -67,6 +71,33 @@ def des_page_vizuls(df: pd.DataFrame) -> None:
     st.pyplot(fig)
 
 
+@st.cache_data
+def prediction(classifier, x_train, y_train):
+    if classifier == 'Random Forest':
+        clf = RandomForestClassifier()
+        clf.fit(x_train, y_train)
+        return clf
+    elif classifier == 'SVC':
+        clf = SVC()
+        clf.fit(x_train, y_train)
+        return clf
+    elif classifier == 'Logistic Regression':
+        clf = LogisticRegression()
+        clf.fit(x_train, y_train)
+        return clf
+    else:
+        print('Wrong inputs')
+
+
+@st.cache_data
+def scores(clf, choice, x_test, y_test):
+    if choice == 'Accuracy':
+        return clf.score(x_test, y_test)
+    elif choice == 'Confusion matrix':
+        return confusion_matrix(y_test, clf.predict(x_test))
+
+
+@st.cache_data
 def des_page_modeling(df: pd.DataFrame) -> None:
     """Do somthing in the modeling"""
     st.write("### Modelling")
@@ -82,8 +113,14 @@ def des_page_modeling(df: pd.DataFrame) -> None:
         x = pd.concat([x_cat_scaled, x_num], axis = 1)
         x_train, x_test, y_train, y_test = train_test_split(
             x, y, test_size=0.2, random_state=123)
+        scaler = StandardScaler()
+        x_train[x_num.columns] = scaler.fit_transform(x_train[x_num.columns])
+        x_test[x_num.columns] = scaler.transform(x_test[x_num.columns])
+        choice = ['Random Forest', 'SVC', 'Logistic Regression']
+        option = st.selectbox('Choice of the model', choice)
+        st.write('The chosen model is :', option)
 
-
+@st.cache_data
 def make_page(fname: str) -> None:
     """Make a page in Streamlit"""
     df = pd.read_csv(fname)

@@ -1,29 +1,29 @@
-
 """
 Streamlit app for the final presentation
-
 """
 
+from typing import Callable
+
 import streamlit as st
+
 from welcome import welcome
 from project_intro import project_intro
 from introduction import introduction
-from features import featuers
-from models import models
-from results import results
 from conclusion import conclusion
+from features import featuers
+from results import results
+from models import models
 
 
 def mk_pages(pages: list[str]) -> str:
     """Make three pages"""
-    page = st.sidebar.radio("Go to", pages)
-    return page
+    return st.sidebar.radio("Table of Contents", pages)
 
 
 def main() -> None:
     """Self explanatory"""
 
-    pages = {
+    pages: dict[str, Callable] = {
         "Welcome!": welcome,
         "Project Intro": project_intro,
         "CanBus Data": introduction,
@@ -33,7 +33,8 @@ def main() -> None:
         "Conclusions": conclusion
     }
 
-    page = mk_pages(list(pages.keys()))
+    page: str = mk_pages(list(pages.keys()))
+
     st.markdown("---")
 
     if page in pages:

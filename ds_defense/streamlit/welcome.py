@@ -53,7 +53,7 @@ def _presenter(presenter: dict[str, Any], mentor: str) -> None:
     st.markdown(f"**GitHub Repository:** {_git_link()}")
 
 
-def mk_header():
+def _mk_header():
     """
     Display images from figs/front_page/ in left and right
     corners"""
@@ -83,8 +83,6 @@ def mk_header():
 
     st.markdown("---")
 
-    st.sidebar.title("Table of contents")
-
 
 def welcome() -> None:
     """Welcome page"""
@@ -93,7 +91,7 @@ def welcome() -> None:
         "anas": "Anas Haj Naeif",
         "saeed": "Saeed Amiri"
     }
-    mk_header()
+    _mk_header()
     _configure_app()
     _display_can_bus_title()
     _presenter(presenter=presenter, mentor='Vincent Lalanne')

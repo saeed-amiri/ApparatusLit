@@ -6,8 +6,21 @@ import streamlit as st
 
 from intro_overview_chalenges import display_challenges_and_limitations, \
     display_dataset_overview
-from intro_file_selection import file_selection, load_data
+from intro_file_selection import file_selection
 from intro_query import df_query
+
+
+@st.cache_data
+def _load_data(file_path: Path) -> pd.DataFrame:
+    """Loads a single parquet file into a DataFrame."""
+    try:
+        df = pd.read_parquet(file_path)
+        if 'timestamp' in df.columns:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+        return df
+    except (FileNotFoundError, IOError, KeyError, ValueError) as e:
+        st.error(f"Error loading file {file_path}: {e}")
+        return pd.DataFrame()
 
 
 def _configure_page():
@@ -26,10 +39,10 @@ def _data_query() -> None:
 
     selected_row: pd.DataFrame = file_selection()
     if not selected_row.empty:
-        st.markdown(f"Number of rwos: {selected_row['n_rows'].iloc[0]}")
+        
         file_path_str = selected_row['path'].iloc[0]
-        df = load_data(Path(file_path_str))
-        df_query(df)
+        df = _load_data(Path(file_path_str))
+        df_query(selected_row, df)
 
 
 def introduction() -> None:

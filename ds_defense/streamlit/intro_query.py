@@ -57,8 +57,9 @@ def _get_number_attacks(df_i: pd.DataFrame) -> str:
     return n_attacks.to_frame().to_markdown()
 
 
-def df_query(df_i: pd.DataFrame) -> None:
+def df_query(selected_row: pd.DataFrame, df_i: pd.DataFrame) -> None:
     """Show a summary of the dataframe"""
+    st.markdown(f"Number of rwos: {selected_row['n_rows'].iloc[0]}")
     page_names = ['Info', 'Head', 'Attacks', None]
     page = st.radio('**Quick Query**',
                     page_names,

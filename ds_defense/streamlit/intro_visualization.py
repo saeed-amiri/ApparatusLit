@@ -161,7 +161,7 @@ def visualization(selected_row: pd.DataFrame, df: pd.DataFrame) -> None:
     delta_t = st.checkbox(r'$\Delta$t Distribution')
     if delta_t:
         _plot_delta_t_distribution(df)
-    delta_t = st.checkbox('Payload Hyte Heatmap')
+    delta_t = st.checkbox('Payload Heat Heatmap')
     if delta_t:
         _plot_payload_byte_heatmap(df)
 

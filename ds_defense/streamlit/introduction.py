@@ -156,7 +156,12 @@ def _get_df_head(df_i: pd.DataFrame) -> str:
 def _df_query(df_i: pd.DataFrame) -> None:
     """Show a summary of the dataframe"""
     page_names = ['Info', 'Head']
-    page = st.radio('Quick Query', page_names, key='query_page_selector')
+    page = st.radio('**Quick Query**',
+                    page_names,
+                    key='query_page_selector',
+                    horizontal=True,
+                    index=None,
+                    )
 
     if page == 'Info':
         _get_df_info_interactive(df_i)

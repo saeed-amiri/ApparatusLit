@@ -104,6 +104,7 @@ def _check_attack(path: Path) -> tuple[str, int | str]:
     return "attack-free", n_rows
 
 
+@st.cache_data
 def get_all_parquet_files(base_path: Path) -> dict[str, dict[str, list[Path]]]:
     """
     Recursively finds all parquet files and organizes them
@@ -135,6 +136,7 @@ def get_all_parquet_files(base_path: Path) -> dict[str, dict[str, list[Path]]]:
     return file_dict
 
 
+@st.cache_data
 def load_data(file_path: Path) -> pd.DataFrame:
     """Loads a single parquet file into a DataFrame."""
     try:
@@ -147,6 +149,7 @@ def load_data(file_path: Path) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+@st.cache_data
 def mk_files_df() -> pd.DataFrame:
     """Make the dataframe of all the files"""
     file_structure: dict[str, dict[str, list[Path]]] = \

@@ -1,7 +1,11 @@
 """Data_Introduction.py"""
+from pathlib import Path
+from io import StringIO
+import pandas as pd
 
 import streamlit as st
 
+from intro_visualisations import mk_files_df, load_data
 
 def _configure_page():
     st.set_page_config(page_title="Data Introduction", page_icon=None)
@@ -61,13 +65,95 @@ def _display_challenges_and_limitations():
         """)
 
 
+def _file_selection() -> pd.DataFrame:
+    """Plot samples of the data"""
+    files_df: pd.DataFrame = mk_files_df()
+
+    st.header("File Selection")
+
+    cols = st.columns(4)
+
+    with cols[0]:
+        all_sets = sorted(files_df['set'].unique())
+        selected_set = st.selectbox(
+            "Select Set",
+            all_sets,
+            index=None,
+            placeholder="Select contact method...")
+
+    with cols[1]:
+        filtered_set = files_df[files_df['set'] == selected_set]
+        available_categories = sorted(filtered_set['category'].unique())
+        selected_category = st.selectbox(
+            "Select Category",
+            available_categories,
+            index=None,
+            placeholder="Select contact method...",)
+
+    with cols[2]:
+        filtered_category = \
+            filtered_set[filtered_set['category'] == selected_category]
+        selected_file: str | None = st.selectbox(
+            "Select File",
+            filtered_category['name'],
+            index=None,
+            placeholder="Select contact method...",)
+
+    with cols[3]:
+        row = filtered_category[filtered_category['name'] == selected_file]
+        attack_value = row['attack'].values[0] if not row.empty else None
+        st.text_input(
+            "Attack",
+            value=attack_value if attack_value is not None else "",
+            disabled=True,
+            placeholder="Select a file first...")
+
+    return row
+
+@st.cache_data
+def _get_df_info_string(df_i: pd.DataFrame) -> str:
+    buffer = StringIO()
+    df_i.info(buf=buffer)
+    return buffer.getvalue()
+
+
+@st.cache_data
+def _get_df_head(df_i: pd.DataFrame) -> str:
+    return df_i.head().to_markdown()
+
+
+def _df_query(df_i: pd.DataFrame) -> None:
+    """Show a summary of the dataframe"""
+    page_names = ['Info', 'Head']
+    page = st.radio('Quick Query', page_names, key='query_page_selector')
+
+    if page == 'Info':
+        st.text(_get_df_info_string(df_i))
+    else:
+        st.markdown(_get_df_head(df_i))
+
+
+def _data_query() -> None:
+    """Look into data"""
+    st.markdown("---")
+    st.title('Data Query')
+    st.markdown("---")
+
+    selected_row: pd.DataFrame = _file_selection()
+    if not selected_row.empty:
+        st.markdown(f"Number of rwos: {selected_row['n_rows']}")
+        file_path_str = selected_row['path'].iloc[0]
+        df = load_data(Path(file_path_str))
+        _df_query(df)
+
+
 def introduction() -> None:
     """combine"""
     _configure_page()
     _display_title()
     _display_dataset_overview()
     _display_challenges_and_limitations()
-
+    _data_query()
 
 if __name__ == "__main__":
     introduction()

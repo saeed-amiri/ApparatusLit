@@ -39,7 +39,6 @@ def _data_query() -> None:
 
     selected_row: pd.DataFrame = file_selection()
     if not selected_row.empty:
-        
         file_path_str = selected_row['path'].iloc[0]
         df = _load_data(Path(file_path_str))
         df_query(selected_row, df)

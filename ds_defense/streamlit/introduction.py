@@ -110,11 +110,42 @@ def _file_selection() -> pd.DataFrame:
 
     return row
 
-@st.cache_data
-def _get_df_info_string(df_i: pd.DataFrame) -> str:
-    buffer = StringIO()
-    df_i.info(buf=buffer)
-    return buffer.getvalue()
+
+def _get_df_info_interactive(df_i: pd.DataFrame) -> None:
+    """Displays an interactive summary of the DataFrame."""
+
+    st.subheader("Interactive Column Summary")
+
+    # Prepare data for the editor
+    col_info = []
+    for col_name in df_i.columns:
+        col_info.append({
+            "Column Name": col_name,
+            "Data Type": str(df_i[col_name].dtype),
+            "Non-Null Count": df_i[col_name].count(),
+            "Null Count": df_i[col_name].isnull().sum(),
+            "# Unique": df_i[col_name].nunique(),
+            "Sample Value": str(
+                df_i[col_name].dropna().unique()[0]
+                if not df_i[col_name].dropna().empty else 'N/A')
+        })
+
+    info_df = pd.DataFrame(col_info)
+
+    st.data_editor(
+        info_df,
+        column_config={
+            "Column Name": st.column_config.TextColumn(disabled=True),
+            "Data Type": st.column_config.TextColumn(disabled=True),
+            "Non-Null Count": st.column_config.NumberColumn(disabled=True),
+            "Null Count": st.column_config.NumberColumn(disabled=True),
+            "# Unique": st.column_config.NumberColumn(disabled=True),
+            "Sample Value": st.column_config.TextColumn(disabled=True)
+        },
+        hide_index=True,
+        width='stretch',
+        num_rows="dynamic"
+    )
 
 
 @st.cache_data
@@ -128,7 +159,7 @@ def _df_query(df_i: pd.DataFrame) -> None:
     page = st.radio('Quick Query', page_names, key='query_page_selector')
 
     if page == 'Info':
-        st.text(_get_df_info_string(df_i))
+        _get_df_info_interactive(df_i)
     else:
         st.markdown(_get_df_head(df_i))
 
@@ -141,7 +172,7 @@ def _data_query() -> None:
 
     selected_row: pd.DataFrame = _file_selection()
     if not selected_row.empty:
-        st.markdown(f"Number of rwos: {selected_row['n_rows']}")
+        st.markdown(f"Number of rwos: {selected_row['n_rows'].iloc[0]}")
         file_path_str = selected_row['path'].iloc[0]
         df = load_data(Path(file_path_str))
         _df_query(df)

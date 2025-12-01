@@ -114,7 +114,7 @@ def _file_selection() -> pd.DataFrame:
 def _get_df_info_interactive(df_i: pd.DataFrame) -> None:
     """Displays an interactive summary of the DataFrame."""
 
-    st.subheader("Interactive Column Summary")
+    st.subheader("Column Summary")
 
     # Prepare data for the editor
     col_info = []
@@ -150,12 +150,20 @@ def _get_df_info_interactive(df_i: pd.DataFrame) -> None:
 
 @st.cache_data
 def _get_df_head(df_i: pd.DataFrame) -> str:
+    st.subheader("First rows")
     return df_i.head().to_markdown()
+
+
+@st.cache_data
+def _get_number_attacks(df_i: pd.DataFrame) -> str:
+    st.subheader("Value counts of attacks")
+    n_attacks = df_i['attack'].value_counts()
+    return n_attacks.to_frame().to_markdown()
 
 
 def _df_query(df_i: pd.DataFrame) -> None:
     """Show a summary of the dataframe"""
-    page_names = ['Info', 'Head']
+    page_names = ['Info', 'Head', 'Attacks', None]
     page = st.radio('**Quick Query**',
                     page_names,
                     key='query_page_selector',
@@ -165,8 +173,13 @@ def _df_query(df_i: pd.DataFrame) -> None:
 
     if page == 'Info':
         _get_df_info_interactive(df_i)
-    else:
+    elif page == 'Head':
         st.markdown(_get_df_head(df_i))
+    elif page == 'Attacks':
+        st.markdown(_get_number_attacks(df_i))
+    else:
+        st.text('None!')
+
 
 
 def _data_query() -> None:

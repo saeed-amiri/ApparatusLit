@@ -71,7 +71,6 @@ def des_page_vizuls(df: pd.DataFrame) -> None:
     st.pyplot(fig)
 
 
-@st.cache_data
 def prediction(classifier, x_train, y_train):
     if classifier == 'Random Forest':
         clf = RandomForestClassifier()
@@ -89,7 +88,6 @@ def prediction(classifier, x_train, y_train):
         print('Wrong inputs')
 
 
-@st.cache_data
 def scores(clf, choice, x_test, y_test):
     if choice == 'Accuracy':
         return clf.score(x_test, y_test)
@@ -97,7 +95,6 @@ def scores(clf, choice, x_test, y_test):
         return confusion_matrix(y_test, clf.predict(x_test))
 
 
-@st.cache_data
 def des_page_modeling(df: pd.DataFrame) -> None:
     """Do somthing in the modeling"""
     st.write("### Modelling")
@@ -120,7 +117,6 @@ def des_page_modeling(df: pd.DataFrame) -> None:
         option = st.selectbox('Choice of the model', choice)
         st.write('The chosen model is :', option)
 
-@st.cache_data
 def make_page(fname: str) -> None:
     """Make a page in Streamlit"""
     df = pd.read_csv(fname)

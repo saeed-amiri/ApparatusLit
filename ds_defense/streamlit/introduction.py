@@ -8,6 +8,7 @@ from intro_overview_chalenges import display_challenges_and_limitations, \
     display_dataset_overview
 from intro_file_selection import file_selection
 from intro_query import df_query
+from intro_visualization import visualization
 
 
 @st.cache_data
@@ -39,6 +40,7 @@ def _data_query() -> None:
         file_path_str = selected_row['path'].iloc[0]
         df = _load_data(Path(file_path_str))
         df_query(selected_row, df)
+        visualization(selected_row, df)
 
 
 def introduction() -> None:

@@ -3,7 +3,7 @@ Visualization of the selected data
 """
 
 import pandas as pd
-import plotly.express as px
+import plotly.express as px  # type: ignore
 
 import streamlit as st
 

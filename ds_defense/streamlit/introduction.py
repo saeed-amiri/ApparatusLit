@@ -33,9 +33,6 @@ def _display_title():
 
 def _data_query() -> None:
     """Look into data"""
-    st.markdown("---")
-    st.title('Data Query')
-    st.markdown("---")
 
     selected_row: pd.DataFrame = file_selection()
     if not selected_row.empty:

@@ -150,7 +150,7 @@ def load_data(file_path: Path) -> pd.DataFrame:
 
 
 @st.cache_data
-def mk_files_df() -> pd.DataFrame:
+def _mk_files_df() -> pd.DataFrame:
     """Make the dataframe of all the files"""
     file_structure: dict[str, dict[str, list[Path]]] = \
         get_all_parquet_files(DATA_BASE_PATH)
@@ -165,6 +165,51 @@ def mk_files_df() -> pd.DataFrame:
     return files_df
 
 
+def file_selection() -> pd.DataFrame:
+    """Plot samples of the data"""
+    files_df: pd.DataFrame = _mk_files_df()
+
+    st.header("File Selection")
+
+    cols = st.columns(4)
+
+    with cols[0]:
+        all_sets = sorted(files_df['set'].unique())
+        selected_set = st.selectbox(
+            "Select Set",
+            all_sets,
+            index=None,
+            placeholder="Select contact method...")
+
+    with cols[1]:
+        filtered_set = files_df[files_df['set'] == selected_set]
+        available_categories = sorted(filtered_set['category'].unique())
+        selected_category = st.selectbox(
+            "Select Category",
+            available_categories,
+            index=None,
+            placeholder="Select contact method...",)
+
+    with cols[2]:
+        filtered_category = \
+            filtered_set[filtered_set['category'] == selected_category]
+        selected_file: str | None = st.selectbox(
+            "Select File",
+            filtered_category['name'],
+            index=None,
+            placeholder="Select contact method...",)
+
+    with cols[3]:
+        row = filtered_category[filtered_category['name'] == selected_file]
+        attack_value = row['attack'].values[0] if not row.empty else None
+        st.text_input(
+            "Attack",
+            value=attack_value if attack_value is not None else "",
+            disabled=True,
+            placeholder="Select a file first...")
+
+    return row
+
 
 if __name__ == '__main__':
-    fills_df: pd.DataFrame = mk_files_df()
+    fills_df: pd.DataFrame = file_selection()

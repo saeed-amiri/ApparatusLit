@@ -9,13 +9,6 @@ from typing import Any
 import streamlit as st
 
 
-def _configure_app() -> None:
-    st.set_page_config(
-        page_title="CAN Bus Anomaly Detection",
-        layout="centered",
-        initial_sidebar_state="expanded")
-
-
 def _display_can_bus_title() -> None:
     title = "CAN Bus Anomaly Detection Project"
     sub_title = "A Machine Learning Approach for Vehicle Security"
@@ -92,7 +85,6 @@ def welcome() -> None:
         "saeed": "Saeed Amiri"
     }
     _mk_header()
-    _configure_app()
     _display_can_bus_title()
     _presenter(presenter=presenter, mentor='Vincent Lalanne')
 

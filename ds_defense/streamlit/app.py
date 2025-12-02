@@ -15,6 +15,13 @@ from results import results
 from models import models
 
 
+def _configure_app() -> None:
+    st.set_page_config(
+        page_title="CAN Bus Anomaly Detection",
+        layout="wide",
+        initial_sidebar_state="expanded")
+
+
 def mk_pages(pages: list[str]) -> str:
     """Make three pages"""
     return st.sidebar.radio("Table of Contents", pages)
@@ -22,6 +29,7 @@ def mk_pages(pages: list[str]) -> str:
 
 def main() -> None:
     """Self explanatory"""
+    _configure_app()
 
     pages: dict[str, Callable] = {
         "Welcome!": welcome,

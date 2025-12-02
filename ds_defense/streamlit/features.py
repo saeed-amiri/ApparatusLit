@@ -5,16 +5,21 @@ from pathlib import Path
 from enum import Enum
 import pandas as pd
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 import streamlit as st
 
 try:
     from .feature_data_loading import load_data  # type: ignore
     from .feature_data_overview import data_overview  # type: ignore
+    from .feature_visualizing import feature_visulisation
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from feature_data_loading import load_data
     from feature_data_overview import data_overview
+    from feature_visualizing import feature_visulisation
 
 
 BASE_PATH = Path(__file__).resolve().parents[2]
@@ -37,10 +42,8 @@ def _set_title() -> None:
 class FeaturePages(Enum):
     """Main pages in the Feature section"""
     OVERVIEW = '📊 Data Overview'
-    VIZ = '📈 Feature Visualization'
-    RAW_VIZ = '📊 Raw Data Visualization'
+    FEATURE_VIZ = '📈 Feature Visualization'
     NONE = None
-
 
 
 def featuers() -> None:
@@ -59,13 +62,11 @@ def featuers() -> None:
         st.subheader(page)
         data_overview(train_df, test_df)
 
-    elif page == FeaturePages.VIZ.value:
+    elif page == FeaturePages.FEATURE_VIZ.value:
         st.subheader(page)
         st.write("Displaying Feature Visualization.")
+        feature_visulisation(train_df, test_df)
 
-    elif page == FeaturePages.RAW_VIZ.value:
-        st.subheader(page)
-        st.write("Displaying Raw Data Visualization.")
     else:
         pass
 

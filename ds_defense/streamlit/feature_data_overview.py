@@ -17,7 +17,7 @@ class DataPages(Enum):
     """Main pages in the Feature section"""
     ANATOMY = 'Anatomy of Messages'
     OVERVIEW = 'Data Overview'
-    ATTACK_VIZ = 'Attack Ditribution'
+    DIST_VIZ = 'Attack Ditribution'
     NONE = None
 
 
@@ -56,7 +56,7 @@ def _show_data_tabels(
             st.error("It does seemes the you tested nothing!")
 
 
-def _show_attack_dist(test_df: pd.DataFrame | None) -> None:
+def _show_distributions(test_df: pd.DataFrame | None) -> None:
     st.subheader("Attack Distribution")
     if test_df is not None:
         fig, ax = plt.subplots(figsize=(8, 4))
@@ -85,8 +85,8 @@ def data_overview(train_df: pd.DataFrame | None, test_df: pd.DataFrame | None
     elif page == DataPages.OVERVIEW.value:
         _show_data_tabels(train_df, test_df)
 
-    elif page == DataPages.ATTACK_VIZ.value:
-        _show_attack_dist(test_df)
+    elif page == DataPages.DIST_VIZ.value:
+        _show_distributions(test_df)
 
     if page == DataPages.NONE.value:
         pass

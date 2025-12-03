@@ -4,15 +4,9 @@ Streamlit app for the final presentation
 
 """
 
+from pathlib import Path
 import streamlit as st
-
-
-def _configure_app() -> None:
-    st.set_page_config(
-        page_title="CAN Bus Anomaly Detection",
-        layout="centered",
-        initial_sidebar_state="expanded"
-        )
+import streamlit.components.v1 as componets
 
 
 def _display_can_bus_title() -> None:
@@ -75,15 +69,58 @@ def _render_markdown_separator() -> None:
     st.markdown("---")
 
 
+def show_presentation_advanced() -> None:
+    """Presenting the slides"""
+    if 'current_slide' not in st.session_state:
+        st.session_state.current_slide = 0
+
+    st.title("🎙️ Project Presentation")
+    base = Path(__file__).resolve().parents[0]
+
+    slides_dir = base / "slides"
+    slide_files = sorted(list(slides_dir.glob("*.png")))
+
+    total_slides = len(slide_files)
+
+    col_prev, _, col_next = st.columns([1, 4, 1])
+
+    with col_prev:
+        if st.button(
+            "⬅️ Previous", disabled=st.session_state.current_slide == 0):
+            st.session_state.current_slide -= 1
+
+    with col_next:
+        if st.button(
+            "Next ➡️",
+            disabled=st.session_state.current_slide == total_slides - 1):
+            if st.session_state.current_slide < total_slides - 1:
+                st.session_state.current_slide += 1
+            else:
+                st.session_state.current_slide = 0
+
+    st.markdown("<h3 style='text-align: center;'>Slide "
+                f"{st.session_state.current_slide + 1} of "
+                f"{total_slides}</h3>", unsafe_allow_html=True)
+
+    current_slide_file = slide_files[st.session_state.current_slide]
+    st.image(str(current_slide_file), width='content')
+
+    st.session_state.current_slide = st.slider(
+        "Or jump to slide:",
+        0, total_slides - 1,
+        st.session_state.current_slide
+    )
+
+
 def project_intro() -> None:
     """Welcome page"""
 
-    _configure_app()
     _display_can_bus_title()
-    _why()
-    _when()
-    _how()
-    _render_markdown_separator()
+    # _why()
+    # _when()
+    # _how()
+    # _render_markdown_separator()
+    show_presentation_advanced()
 
 
 if __name__ == '__main__':

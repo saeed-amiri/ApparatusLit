@@ -48,7 +48,7 @@ def main() -> None:
         "Project Intro": project_intro,
         "CanBus Data": introduction,
         "Features": lambda: featuers(train_df, test_df),
-        "Modeling": models,
+        "Modeling": lambda: models(train_df, test_df),
         "Results": results,
         "Conclusions": conclusion
     }

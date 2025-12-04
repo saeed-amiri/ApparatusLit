@@ -1,4 +1,4 @@
-"""Data_Introduction.py"""
+"""introduction.py"""
 from pathlib import Path
 import pandas as pd
 
@@ -24,11 +24,11 @@ def _load_data(file_path: Path) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-def _configure_page():
+def _configure_page() -> None:
     st.set_page_config(page_title="Data Introduction", page_icon=None)
 
 
-def _display_title():
+def _display_title() -> None:
     st.title("Data Introduction")
 
 

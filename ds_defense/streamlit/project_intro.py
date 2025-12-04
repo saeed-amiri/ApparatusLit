@@ -30,7 +30,7 @@ def _show_presentation() -> None:
     base = Path(__file__).resolve().parents[0]
 
     slides_dir = base / "slides"
-    slide_files = sorted(list(slides_dir.glob("*.png")))
+    slide_files = sorted(list(slides_dir.glob("*slides*.png")))
     presenter(slides=slide_files)
 
 

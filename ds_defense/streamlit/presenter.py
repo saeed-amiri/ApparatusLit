@@ -7,6 +7,9 @@ def presenter(slides: list[Path]) -> None:
     """Present pictures as slide"""
     n_slide = len(slides)
 
+    if 'current_slide' not in st.session_state:
+        st.session_state.current_slide = 0
+
     col_prev, _, col_next = st.columns([1, 4, 1])
 
     with col_prev:

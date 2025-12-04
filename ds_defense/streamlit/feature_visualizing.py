@@ -31,7 +31,7 @@ def _compute_features(train_df: pd.DataFrame, test_df: pd.DataFrame
 
 
 def _sampler_slider(df_i: pd.DataFrame) -> pd.DataFrame:
-    sample_size = st.slider("Sample Size for Plots", 1000, 50000, 5000)
+    sample_size = st.sidebar.slider("Sample Size for Plots", 1000, 50000, 5000)
     plot_df = (
         df_i
         .groupby('label', group_keys=False)
@@ -74,7 +74,7 @@ def _rolling_sample_plot(df_i: pd.DataFrame) -> None:
 
 
 def _heuristic_sample_plot(df_i: pd.DataFrame) -> None:
-    st.sidebar.subheader("3. New ID Check (Heuristic)")
+    st.subheader("3. New ID Check (Heuristic)")
     fig3, ax3 = plt.subplots(figsize=(8, 5))
     sns.countplot(x='Label Name', hue='is_new_id', data=df_i, ax=ax3)
     plt.legend(title='Is New ID')

@@ -60,4 +60,4 @@ def featuers(train_df: pd.DataFrame | None, test_df: pd.DataFrame | None
 
 
 if __name__ == '__main__':
-    featuers()
+    featuers(None, None)

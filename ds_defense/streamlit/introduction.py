@@ -1,72 +1,55 @@
-"""Data_Introduction.py"""
+"""introduction.py"""
+from pathlib import Path
+import pandas as pd
 
 import streamlit as st
 
+from intro_overview_chalenges import display_challenges_and_limitations, \
+    display_dataset_overview
+from intro_file_selection import file_selection
+from intro_query import df_query
+from intro_visualization import visualization
 
-def _configure_page():
+
+@st.cache_data
+def _load_data(file_path: Path) -> pd.DataFrame:
+    """Loads a single parquet file into a DataFrame."""
+    try:
+        df = pd.read_parquet(file_path)
+        if 'timestamp' in df.columns:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s')
+        return df
+    except (FileNotFoundError, IOError, KeyError, ValueError) as e:
+        st.error(f"Error loading file {file_path}: {e}")
+        return pd.DataFrame()
+
+
+def _configure_page() -> None:
     st.set_page_config(page_title="Data Introduction", page_icon=None)
 
 
-def _display_title():
+def _display_title() -> None:
     st.title("Data Introduction")
 
 
-def _display_dataset_overview():
-    st.header("Dataset Overview")
-    st.markdown("""
-    The data for this project consists of real-world CAN bus
-     logs, collected from a vehicle under various conditions.
-""")
-    st.markdown("""
-- **Source:** Real vehicle CAN bus communication logs.
-- **Format:** Time-series data, stored in efficient `parquet` files.
-- **Structure:** Organized hierarchically into training and test sets,
-    with further subdivisions for different attack scenarios.
-""")
+def _data_query() -> None:
+    """Look into data"""
 
-
-def _display_challenges_and_limitations():
-    st.header("Key Challenges and Limitations")
-
-    st.error("""
-        **1. Extreme Class Imbalance**
-        The dataset is highly imbalanced, with normal traffic
-         (`attack=0`) vastly outnumbering attack traffic
-         (`attack=1`). This poses a significant challenge
-         for model training.
-        """)
-
-    st.error("""
-        **2. Temporal Dependencies**
-        CAN bus data is a time-series. The order and timing
-         of messages are critical. Anomalies are often defined
-         by a *change* in the temporal pattern, not just a
-         single bad message.
-        """)
-
-    st.error("""
-        **3. Subtle Attack Patterns**
-        Some attacks, like `rpm` or `force-neutral`, are very
-         subtle and designed to mimic normal behavior, making
-         them difficult to distinguish from legitimate vehicle
-         operations.
-        """)
-
-    st.info("""
-        **Note:** A fundamental challenge for this project
-         was that the initial test set only contained attack
-         samples, making it impossible to measure false
-         positives. A proper evaluation requires a test set
-         with both normal and attack data.
-        """)
+    selected_row: pd.DataFrame = file_selection()
+    if not selected_row.empty:
+        file_path_str = selected_row['path'].iloc[0]
+        df = _load_data(Path(file_path_str))
+        df_query(selected_row, df)
+        visualization(selected_row, df)
 
 
 def introduction() -> None:
     """combine"""
     _configure_page()
     _display_title()
-    _display_dataset_overview()
-    _display_challenges_and_limitations()
+    display_dataset_overview()
+    display_challenges_and_limitations()
+    _data_query()
 
 
 if __name__ == "__main__":

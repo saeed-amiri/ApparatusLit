@@ -91,8 +91,8 @@ def welcome() -> None:
         "anas": "Anas Haj Naeif",
         "saeed": "Saeed Amiri"
     }
-    _mk_header()
     _configure_app()
+    _mk_header()
     _display_can_bus_title()
     _presenter(presenter=presenter, mentor='Vincent Lalanne')
 

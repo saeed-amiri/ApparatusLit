@@ -5,10 +5,10 @@ DataOverview section in the feature analyis
 
 from pathlib import Path
 from enum import Enum
-import pandas as pd
+from typing import Callable
 import functools
 
-from typing import Callable
+import pandas as pd
 
 import matplotlib.pyplot as plt
 import seaborn as sns  # type: ignore
@@ -250,7 +250,7 @@ def _show_data_byte_box(df_i: pd.DataFrame, data_cols: list[str]
 def _show_distributions(test_df: pd.DataFrame | None) -> None:
     data_cols = [f'data{i}' for i in range(8)]
     if test_df is not None:
-        available_data_cols = [c for c in data_cols if c in test_df.columns]
+        valid_col = [c for c in data_cols if c in test_df.columns]
         sample_size = st.sidebar.slider(
             "Sample Size for Plots", 1000, 50000, 5000, key="data_viz_sample")
         plot_df = (
@@ -270,23 +270,24 @@ def _show_distributions(test_df: pd.DataFrame | None) -> None:
                     pages,
                     horizontal=True,
                     index=None)
-    if page == DistrPages.ATTACK.value:
-        _show_attack_distribution(plot_df)  # type: ignore
 
-    if page == DistrPages.TOP_CAN_ID.value:
-        _show_top_can_id(plot_df)  # type: ignore
+    page_handlers = {
+        DistrPages.ATTACK.value: \
+            lambda: _show_attack_distribution(plot_df),  # type: ignore
+        DistrPages.TOP_CAN_ID.value: \
+            lambda: _show_top_can_id(plot_df),  # type: ignore
+        DistrPages.IAT_LOG.value: \
+            lambda: _show_iat_ditribution(plot_df),  # type: ignore
+        DistrPages.DATA_BYTE_HIST.value: \
+            lambda: _show_data_byte_hist(plot_df, valid_col),  # type: ignore
+        DistrPages.DATA_BYTE_VIOLIN.value: \
+            lambda: _show_data_byte_violin(plot_df, valid_col),  # type: ignore
+        DistrPages.DATA_BYTE_BOX.value: \
+            lambda: _show_data_byte_box(plot_df, valid_col),  # type: ignore
+    }
 
-    if page == DistrPages.IAT_LOG.value:
-        _show_iat_ditribution(plot_df)  # type: ignore
-
-    if page == DistrPages.DATA_BYTE_HIST.value:
-        _show_data_byte_hist(plot_df, available_data_cols)  # type: ignore
-
-    if page == DistrPages.DATA_BYTE_VIOLIN.value:
-        _show_data_byte_violin(plot_df, available_data_cols)  # type: ignore
-
-    if page == DistrPages.DATA_BYTE_BOX.value:
-        _show_data_byte_box(plot_df, available_data_cols)  # type: ignore
+    if page in page_handlers:
+        page_handlers[page]()
 
 
 def data_overview(train_df: pd.DataFrame | None, test_df: pd.DataFrame | None

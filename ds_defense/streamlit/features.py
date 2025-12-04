@@ -5,16 +5,12 @@ from pathlib import Path
 from enum import Enum
 import pandas as pd
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-
 import streamlit as st
 
 try:
     from .feature_data_loading import load_data  # type: ignore
     from .feature_data_overview import data_overview  # type: ignore
-    from .feature_visualizing import feature_visulisation
+    from .feature_visualizing import feature_visulisation  # type: ignore
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from feature_data_loading import load_data

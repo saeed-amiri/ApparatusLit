@@ -8,18 +8,12 @@ import pandas as pd
 import streamlit as st
 
 try:
-    from .feature_data_loading import load_data  # type: ignore
     from .feature_data_overview import data_overview  # type: ignore
     from .feature_visualizing import feature_visulisation  # type: ignore
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from feature_data_loading import load_data
     from feature_data_overview import data_overview
     from feature_visualizing import feature_visulisation
-
-
-BASE_PATH = Path(__file__).resolve().parents[2]
-DATA_BASE_PATH = BASE_PATH / Path("data/final_dataset")
 
 
 def _set_title() -> None:
@@ -42,12 +36,10 @@ class FeaturePages(Enum):
     NONE = None
 
 
-def featuers() -> None:
+def featuers(train_df: pd.DataFrame | None, test_df: pd.DataFrame | None
+             ) -> None:
     """set the feature page up"""
     _set_title()
-    test_df: pd.DataFrame | None
-    train_df: pd.DataFrame | None
-    train_df, test_df = load_data(DATA_BASE_PATH)
     pages = [page.value for page in FeaturePages]
     page = st.radio('Feature Engineering & Visualization',
                     pages,

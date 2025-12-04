@@ -1,9 +1,11 @@
 """
 Streamlit app for the final presentation
 """
-
+import sys
+from pathlib import Path
 from typing import Callable
 
+import pandas as pd
 import streamlit as st
 
 from welcome import welcome
@@ -13,6 +15,12 @@ from conclusion import conclusion
 from features import featuers
 from results import results
 from models import models
+
+from feature_data_loading import load_data
+
+
+BASE_PATH = Path(__file__).resolve().parents[2]
+DATA_BASE_PATH = BASE_PATH / Path("data/final_dataset")
 
 
 def _configure_app() -> None:
@@ -29,13 +37,17 @@ def mk_pages(pages: list[str]) -> str:
 
 def main() -> None:
     """Self explanatory"""
+    test_df: pd.DataFrame | None
+    train_df: pd.DataFrame | None
+    train_df, test_df = load_data(DATA_BASE_PATH)
+
     _configure_app()
 
     pages: dict[str, Callable] = {
         "Welcome!": welcome,
         "Project Intro": project_intro,
         "CanBus Data": introduction,
-        "Features": featuers,
+        "Features": lambda: featuers(train_df, test_df),
         "Modeling": models,
         "Results": results,
         "Conclusions": conclusion

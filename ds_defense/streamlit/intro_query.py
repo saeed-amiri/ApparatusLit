@@ -2,9 +2,18 @@
 Query of the data in the introduction page
 """
 
+from enum import Enum
 import pandas as pd
 
 import streamlit as st
+
+
+class QueryPages(Enum):
+    """main pages"""
+    INFO = 'Info'
+    HEAD = 'Head'
+    ATK = 'Attack'
+    NONE = None
 
 
 def _get_df_info_interactive(df_i: pd.DataFrame) -> None:
@@ -63,19 +72,20 @@ def df_query(selected_row: pd.DataFrame, df_i: pd.DataFrame) -> None:
     st.title('Data Query')
     st.markdown("---")
     st.markdown(f"Number of rwos: {selected_row['n_rows'].iloc[0]}")
-    page_names = ['Info', 'Head', 'Attacks', None]
+    pages = [page.value for page in QueryPages]
     page = st.radio('**Quick Query**',
-                    page_names,
+                    pages,
                     key='query_page_selector',
                     horizontal=True,
                     index=None,
+                    label_visibility='collapsed',
                     )
 
-    if page == 'Info':
-        _get_df_info_interactive(df_i)
-    elif page == 'Head':
-        st.markdown(_get_df_head(df_i))
-    elif page == 'Attacks':
-        st.markdown(_get_number_attacks(df_i))
-    else:
-        st.text('None!')
+    page_handlers = {
+        QueryPages.INFO.value: lambda: _get_df_info_interactive(df_i),
+        QueryPages.HEAD.value: lambda: st.markdown(_get_df_head(df_i)),
+        QueryPages.ATK.value: lambda: st.markdown(_get_number_attacks(df_i)),
+        }
+
+    if page in page_handlers:
+        page_handlers[page]()

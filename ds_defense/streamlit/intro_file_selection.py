@@ -12,8 +12,7 @@ DATA_BASE_PATH = BASE_PATH / Path("data/processed/can-train-and-test")
 
 
 def _classify_from_path(paths: list[Path],
-                       check_attack: bool = True
-                       ) -> pd.DataFrame:
+                        check_attack: bool = True) -> pd.DataFrame:
     """
     Classify the files manually based on the names of dirs
     the dirs are catagorized as:
@@ -105,7 +104,8 @@ def _check_attack(path: Path) -> tuple[str, int | str]:
 
 
 @st.cache_data
-def _get_all_parquet_files(base_path: Path) -> dict[str, dict[str, list[Path]]]:
+def _get_all_parquet_files(base_path: Path
+                           ) -> dict[str, dict[str, list[Path]]]:
     """
     Recursively finds all parquet files and organizes them
     in a nested dictionary.
@@ -156,7 +156,7 @@ def file_selection() -> pd.DataFrame:
     """Plot samples of the data"""
     files_df: pd.DataFrame = _mk_files_df()
 
-    st.header("File Selection")
+    st.header("Raw Data")
 
     cols = st.columns(4)
 

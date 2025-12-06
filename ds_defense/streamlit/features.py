@@ -10,29 +10,32 @@ import streamlit as st
 try:
     from .feature_data_overview import data_overview  # type: ignore
     from .feature_visualizing import feature_visulisation  # type: ignore
+    from .presenter import presenter
 except ImportError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from feature_data_overview import data_overview
-    from feature_visualizing import feature_visulisation
+    from feature_data_overview import data_overview  # type: ignore
+    from feature_visualizing import feature_visulisation  # type: ignore
+    from presenter import presenter  # type: ignore
 
 
 def _set_title() -> None:
-    st.title("🔧 Feature Engineering")
-    st.markdown("""
-    This application visualizes the **Hybrid Anomaly Detection
-     System** for CAN Bus security.
-    It detects **DoS Attacks** and **Fuzzy Attacks** using a
-     combination of:
-    1.  **Isolation Forest** (Global Outlier Detection)
-    2.  **Local Outlier Factor (LOF)** (Local Outlier Detection)
-    3.  **Heuristic Priority Logic** (New ID & Frequency Checks)
-    """)
+    st.title("Feature Engineering")
+
+
+def _intro() -> None:
+
+    base = Path(__file__).resolve().parents[0]
+    slides_dir = base / "slides"
+
+    slide_files = sorted(list(slides_dir.glob("feature*.png")))
+
+    presenter(slides=slide_files, ran_seed=23, length=21)
 
 
 class FeaturePages(Enum):
     """Main pages in the Feature section"""
-    OVERVIEW = '📊 Data Overview'
-    FEATURE_VIZ = '📈 Feature Visualization'
+    OVERVIEW = 'Data Overview'
+    FEATURE_VIZ = 'Feature Visualization'
     NONE = None
 
 
@@ -40,23 +43,22 @@ def featuers(train_df: pd.DataFrame | None, test_df: pd.DataFrame | None
              ) -> None:
     """set the feature page up"""
     _set_title()
+    _intro()
+
     pages = [page.value for page in FeaturePages]
     page = st.radio('Feature Engineering & Visualization',
                     pages,
                     horizontal=True,
                     index=None)
 
-    if page == FeaturePages.OVERVIEW.value:
-        st.subheader(page)
-        data_overview(train_df, test_df)
+    page_handlers = {
+        FeaturePages.OVERVIEW.value: lambda: data_overview(train_df, test_df),
+        FeaturePages.FEATURE_VIZ.value:
+            lambda: feature_visulisation(train_df, test_df),
+    }
 
-    elif page == FeaturePages.FEATURE_VIZ.value:
-        st.subheader(page)
-        st.write("Displaying Feature Visualization.")
-        feature_visulisation(train_df, test_df)
-
-    else:
-        pass
+    if page is not None and page in pages:
+        page_handlers[page]()  # types: ignore
 
 
 if __name__ == '__main__':

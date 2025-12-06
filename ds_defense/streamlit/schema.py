@@ -15,4 +15,3 @@ class PlotData:
     train_dir: str = "train_01"
     train_files: list[str] = field(
         default_factory=lambda: ['DoS-1.parquet.gzip'])
-

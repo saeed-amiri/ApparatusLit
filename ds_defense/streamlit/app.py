@@ -1,26 +1,35 @@
 """
 Streamlit app for the final presentation
 """
-import sys
+from enum import Enum
 from pathlib import Path
 from typing import Callable
 
 import pandas as pd
+
+from welcome import welcome  # type: ignore
+from project_intro import project_intro  # type: ignore
+from introduction import introduction  # type: ignore
+from conclusion import conclusion  # type: ignore
+from feature_data_loading import load_data  # type: ignore
+from features import featuers  # type: ignore
+from models import modeller  # type: ignore
+
 import streamlit as st
-
-from welcome import welcome
-from project_intro import project_intro
-from introduction import introduction
-from conclusion import conclusion
-from features import featuers
-from results import results
-from models import models
-
-from feature_data_loading import load_data
 
 
 BASE_PATH = Path(__file__).resolve().parents[2]
 DATA_BASE_PATH = BASE_PATH / Path("data/final_dataset")
+
+
+class MainPages(Enum):
+    """Main pages of the app"""
+    WELCOME = "Welcome!"
+    PROJECT = "Project Intro"
+    FEATURES = "Features"
+    MODELS = "Modeling & Results"
+    CONCLUSION = "Conclusions"
+    CANBUS = "Appendix (CAN-Bus Data)"
 
 
 def _configure_app() -> None:
@@ -43,22 +52,22 @@ def main() -> None:
 
     _configure_app()
 
-    pages: dict[str, Callable] = {
-        "Welcome!": welcome,
-        "Project Intro": project_intro,
-        "CanBus Data": introduction,
-        "Features": lambda: featuers(train_df, test_df),
-        "Modeling": lambda: models(train_df, test_df),
-        "Results": results,
-        "Conclusions": conclusion
+    pages = [page.value for page in MainPages]
+    page = mk_pages(pages=pages)
+
+    page_handlers: dict[str, Callable] = {
+        MainPages.WELCOME.value: welcome,
+        MainPages.PROJECT.value: project_intro,
+        MainPages.FEATURES.value: lambda: featuers(train_df, test_df),
+        MainPages.MODELS.value: lambda: modeller(train_df, test_df),
+        MainPages.CONCLUSION.value: conclusion,
+        MainPages.CANBUS.value: introduction
     }
 
-    page: str = mk_pages(list(pages.keys()))
+    if page in page_handlers:
+        page_handlers[page]()
 
     st.markdown("---")
-
-    if page in pages:
-        pages[page]()
 
 
 if __name__ == '__main__':

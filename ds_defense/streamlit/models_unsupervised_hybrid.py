@@ -13,7 +13,6 @@ from typing import Any
 from enum import Enum
 import numpy as np
 import pandas as pd
-import streamlit as st
 
 from sklearn.ensemble import IsolationForest  # type: ignore
 from sklearn.neighbors import LocalOutlierFactor  # type: ignore
@@ -24,10 +23,12 @@ from sklearn.metrics import \
     classification_report, confusion_matrix, precision_recall_curve
 
 import matplotlib.pyplot as plt
-import seaborn as sns # type: ignore
+import seaborn as sns  # type: ignore
 
-from feature_engineering import feature_engineering_pipeline
-from presenter import presenter
+from presenter import presenter  # type: ignore
+from feature_engineering import feature_engineering_pipeline  # type: ignore
+
+import streamlit as st
 
 
 class MainPages(Enum):
@@ -36,16 +37,13 @@ class MainPages(Enum):
     FEATURE = 'Features'
     PARAM = 'Parameters'
     TRAIN = 'Training models on a subset and running detection logic...'
+    SHAP = "Value of Contribution (SHAP)"
+    NONE = None
 
 
 FEATURES = ['can_id_dec', 'dlc', 'is_new_id', 'rolling_volatility',
             'zero_ratio', 'hamming_dist', 'log_iat', 'frequency_hz',
             'iat_rolling_mean_20']
-
-
-def _set_header() -> None:
-    st.header('Hybrid Anomaly Detection System')
-    st.markdown("Training models on a subset and running detection logic...")
 
 
 def _set_parameters(train_df: pd.DataFrame) -> tuple[int, int]:
@@ -225,7 +223,7 @@ def _intro() -> None:
     slides_dir = base / "slides"
 
     slide_files = sorted(list(slides_dir.glob("unsupervised-hybrid*.png")))
-    presenter(slides=slide_files)
+    presenter(slides=slide_files, ran_seed=97, length=14)
 
 
 def _feature() -> None:
@@ -239,13 +237,12 @@ def _param() -> None:
 
 def hybrid_model(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
     """Implementing hybrid models unsupervised ML"""
-    _set_header()
     pages = [page.value for page in MainPages]
     page = st.radio('Select Page',
                     pages,
                     horizontal=True,
                     index=None,
-                    label_visibility='collapsed'
+                    label_visibility='collapsed',
                     )
 
     page_handlers = {

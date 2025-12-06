@@ -2,13 +2,12 @@
 from pathlib import Path
 import pandas as pd
 
-import streamlit as st
+from intro_file_selection import file_selection  # type: ignore
+from intro_query import df_query  # type: ignore
+from intro_visualization import visualization  # type: ignore
+from presenter import presenter  # type: ignore
 
-from intro_overview_chalenges import display_challenges_and_limitations, \
-    display_dataset_overview
-from intro_file_selection import file_selection
-from intro_query import df_query
-from intro_visualization import visualization
+import streamlit as st
 
 
 @st.cache_data
@@ -25,11 +24,21 @@ def _load_data(file_path: Path) -> pd.DataFrame:
 
 
 def _configure_page() -> None:
-    st.set_page_config(page_title="Data Introduction", page_icon=None)
+    st.set_page_config(page_title="CAN Protocol", page_icon=None)
 
 
 def _display_title() -> None:
-    st.title("Data Introduction")
+    st.title("CAN Protocol")
+
+
+def _intro() -> None:
+
+    base = Path(__file__).resolve().parents[0]
+    slides_dir = base / "slides"
+
+    slide_files = sorted(list(slides_dir.glob("canbus*.png")))
+
+    presenter(slides=slide_files, ran_seed=19, length=19)
 
 
 def _data_query() -> None:
@@ -47,8 +56,7 @@ def introduction() -> None:
     """combine"""
     _configure_page()
     _display_title()
-    display_dataset_overview()
-    display_challenges_and_limitations()
+    _intro()
     _data_query()
 
 

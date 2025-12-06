@@ -272,17 +272,17 @@ def _show_distributions(test_df: pd.DataFrame | None) -> None:
                     index=None)
 
     page_handlers = {
-        DistrPages.ATTACK.value: \
+        DistrPages.ATTACK.value:
             lambda: _show_attack_distribution(plot_df),  # type: ignore
-        DistrPages.TOP_CAN_ID.value: \
+        DistrPages.TOP_CAN_ID.value:
             lambda: _show_top_can_id(plot_df),  # type: ignore
-        DistrPages.IAT_LOG.value: \
+        DistrPages.IAT_LOG.value:
             lambda: _show_iat_ditribution(plot_df),  # type: ignore
-        DistrPages.DATA_BYTE_HIST.value: \
+        DistrPages.DATA_BYTE_HIST.value:
             lambda: _show_data_byte_hist(plot_df, valid_col),  # type: ignore
-        DistrPages.DATA_BYTE_VIOLIN.value: \
+        DistrPages.DATA_BYTE_VIOLIN.value:
             lambda: _show_data_byte_violin(plot_df, valid_col),  # type: ignore
-        DistrPages.DATA_BYTE_BOX.value: \
+        DistrPages.DATA_BYTE_BOX.value:
             lambda: _show_data_byte_box(plot_df, valid_col),  # type: ignore
     }
 

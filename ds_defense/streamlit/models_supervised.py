@@ -26,23 +26,33 @@ class SubPages(Enum):
     NONE = None
 
 
-@dataclass
-class Features:
-  can_id: str
-  can_id_prev1_3: str
-  dlc: int
-  data0_7: int
-  delta_t: float
-  can_id_freq: float
-  iat_std: float
-
-
 def _intro() -> None:
     st.header("Background")
 
 
 def _dt_features() -> None:
     st.header('Selected Features')
+    st.markdown("""
+    - **CAN ID**: `can_id`, `can_id_prev1`, `can_id_prev2`, `can_id_prev3`
+    - **Time**: `timestamp`, `delta_t`, `iat_std`, `iat_mean`
+    - **Payload**: `data0` through `data7`
+    - **Frequency**: `can_id_freq`
+    - **Metadata**:
+        `set`, `scenario_category`, `vehicle_type`,
+        `attack_scenario`, `data_label`, `file_attack`
+    """)
+
+
+def _dt_params() -> None:
+    st.header('Parameters')
+    col1, col2 = st.columns(2)
+    with col1:
+        st.selectbox("Criterion", ['gini', 'entropy'], key='dt_criterion')
+        st.slider("Max Depth", 1, 20, 5, key='dt_max_depth')
+        st.slider("Min Samples Split", 2, 20, 2, key='dt_min_samples_split')
+    with col2:
+        st.slider("Min Samples Leaf", 1, 20, 1, key='dt_min_samples_leaf')
+        st.number_input("Random State", value=42, key='dt_random_state')
 
 
 def _decision_tree() -> None:
@@ -57,7 +67,11 @@ def _decision_tree() -> None:
     page_handlers = {
         SubPages.INTRO.value: _intro,
         SubPages.FEATURE.value: _dt_features,
+        SubPages.PARAM.value: _dt_params,
     }
+
+    if page in page_handlers:
+        page_handlers[page]()
 
 
 def _xgboost() -> None:
@@ -71,7 +85,11 @@ def _xgboost() -> None:
     page_handlers = {
         SubPages.INTRO.value: _intro,
         SubPages.FEATURE.value: _dt_features,
+        SubPages.PARAM.value: _dt_params,
     }
+
+    if page in page_handlers:
+        page_handlers[page]()
 
 
 def _svm() -> None:
@@ -85,7 +103,11 @@ def _svm() -> None:
     page_handlers = {
         SubPages.INTRO.value: _intro,
         SubPages.FEATURE.value: _dt_features,
+        SubPages.PARAM.value: _dt_params,
     }
+
+    if page in page_handlers:
+        page_handlers[page]()
 
 
 def supervised_models() -> None:

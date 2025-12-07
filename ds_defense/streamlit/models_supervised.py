@@ -2,7 +2,6 @@
 The superivsed models
 
 """
-from dataclasses import dataclass
 from enum import Enum
 
 import streamlit as st

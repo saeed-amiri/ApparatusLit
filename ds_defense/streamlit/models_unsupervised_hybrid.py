@@ -29,6 +29,12 @@ from presenter import presenter  # type: ignore
 from feature_engineering import feature_engineering_pipeline  # type: ignore
 
 import streamlit as st
+import joblib
+import shap
+
+# Setup caching
+cache_dir = ".cache"
+memory = joblib.Memory(cache_dir, verbose=0)
 
 
 class MainPages(Enum):
@@ -38,7 +44,7 @@ class MainPages(Enum):
     PARAM = 'Parameters'
     TRAIN = 'Training models on a subset and running detection logic...'
     SHAP = "Value of Contribution (SHAP)"
-    NONE = None
+    EXTRA = "Extra Slides"
 
 
 FEATURES = ['can_id_dec', 'dlc', 'is_new_id', 'rolling_volatility',
@@ -50,8 +56,9 @@ def _set_parameters(train_df: pd.DataFrame) -> tuple[int, int]:
     col_sample1, col_sample2 = st.columns(2)
     with col_sample1:
         total_train = len(train_df)
+        # Ensure max_value > min_value
         n_samples_iforest = st.slider(
-            "iForest Training Samples", 5000, total_train, total_train)
+            "iForest Training Samples", 5000, max(5001, total_train), total_train)
     with col_sample2:
         n_samples_lof = st.slider(
             "LOF Training Samples (Max 50k)", 5000, 50000, 50000)
@@ -122,14 +129,45 @@ def _mk_heatmap(test: pd.Series, pred: np.ndarray) -> None:
     st.pyplot(fig_cm)
 
 
-def _execute_ml_pipeline(train_df: pd.DataFrame, test_df: pd.DataFrame,
-                         n_samples_iforest: int, n_samples_lof: int) -> None:
+@memory.cache
+def train_lof(x_train: np.ndarray) -> LocalOutlierFactor:
+    # LOF: n_neighbors=40, contamination=0.1 (Matches Notebook 03)
+    lof = LocalOutlierFactor(
+        n_neighbors=40, contamination=0.1, novelty=True, n_jobs=-1)
+    lof.fit(x_train)
+    return lof
+
+
+@memory.cache
+def train_iforest(x_train: np.ndarray) -> IsolationForest:
+    # IForest: n_estimators=500, max_samples=2048,
+    # contamination=0.15 (Matches Notebook 03)
+    iforest = IsolationForest(n_estimators=500,
+                              max_samples=2048,
+                              contamination=0.15,
+                              random_state=42,
+                              n_jobs=-1)
+    iforest.fit(x_train)
+    return iforest
+
+
+@st.cache_data
+def cached_feature_engineering(
+        df: pd.DataFrame, ref_df: pd.DataFrame) -> pd.DataFrame:
+    return feature_engineering_pipeline(
+        df_i=df.copy(), train_df_ref=ref_df.copy())
+
+
+@st.cache_data
+def _calculate_results(train_df: pd.DataFrame, test_df: pd.DataFrame,
+                       n_samples_iforest: int, n_samples_lof: int
+                       ) -> dict[str, Any]:
     train_df_processed = \
-        feature_engineering_pipeline(
-            df_i=train_df.copy(), train_df_ref=train_df.copy())
+        cached_feature_engineering(
+            df=train_df, ref_df=train_df)
     test_df_processed = \
-        feature_engineering_pipeline(
-            df_i=test_df.copy(), train_df_ref=train_df.copy())
+        cached_feature_engineering(
+            df=test_df, ref_df=train_df)
     label_map = {'attack-free': 0, 'DoS': 1, 'fuzzing': 2, 'Normal': 0}
 
     if train_df_processed['label'].dtype == 'object':
@@ -138,6 +176,13 @@ def _execute_ml_pipeline(train_df: pd.DataFrame, test_df: pd.DataFrame,
     if test_df_processed['label'].dtype == 'object':
         test_df_processed['label'] = \
             test_df_processed['label'].replace(label_map)
+
+    # Ensure all features are numeric
+    for col in FEATURES:
+        train_df_processed[col] = pd.to_numeric(
+            train_df_processed[col], errors='coerce')
+        test_df_processed[col] = pd.to_numeric(
+            test_df_processed[col], errors='coerce')
 
     x_train_iforest = _get_train_sample(
         train_df_processed, n_samples_iforest, FEATURES)
@@ -156,19 +201,8 @@ def _execute_ml_pipeline(train_df: pd.DataFrame, test_df: pd.DataFrame,
     x_test_processed = preprocessor.transform(x_test)
 
     # Train Models
-    # LOF: n_neighbors=40, contamination=0.1 (Matches Notebook 03)
-    lof = LocalOutlierFactor(
-        n_neighbors=40, contamination=0.1, novelty=True, n_jobs=-1)
-    lof.fit(x_train_lof_processed)  # LOF uses its specific sample
-
-    # IForest: n_estimators=500, max_samples=2048,
-    # contamination=0.15 (Matches Notebook 03)
-    iforest = IsolationForest(n_estimators=500,
-                              max_samples=2048,
-                              contamination=0.15,
-                              random_state=42,
-                              n_jobs=-1)
-    iforest.fit(x_train_iforest_processed)  # iForest uses its specific sample
+    lof = train_lof(x_train_lof_processed)
+    iforest = train_iforest(x_train_iforest_processed)
 
     # Inference
     lof_scores = -lof.decision_function(x_test_processed)
@@ -193,25 +227,47 @@ def _execute_ml_pipeline(train_df: pd.DataFrame, test_df: pd.DataFrame,
     y_pred_lof = (lof_scores >= best_thresh_lof).astype(int)
     y_pred_if = (if_scores >= best_thresh_if).astype(int)
 
-    st.info(f"Optimized Thresholds Found: LOF={best_thresh_lof:.2f}, "
-            f"iForest={best_thresh_if:.2f}")
-
     # Priority Logic
     y_pred_final: np.ndarray = \
         _mk_final_pred(y_test, test_df_processed, y_pred_if, y_pred_lof)
 
-    st.success("Detection Complete!")
-
-    # Metrics
-    _mk_report(test=y_test, pred=y_pred_final)
-    _mk_heatmap(test=y_test, pred=y_pred_final)
+    return {
+        "y_test": y_test,
+        "y_pred_final": y_pred_final,
+        "best_thresh_lof": best_thresh_lof,
+        "best_thresh_if": best_thresh_if,
+        "lof_model": lof,
+        "iforest_model": iforest,
+        "x_test_processed": x_test_processed,
+        "x_train_sample": x_train_iforest_processed
+    }
 
 
 def _train_model(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
     n_samples_iforest, n_samples_lof = _set_parameters(train_df)
+
+    if 'hybrid_results' not in st.session_state:
+        st.session_state.hybrid_results = None
+
     if st.button("Run Detection Pipeline"):
-        _execute_ml_pipeline(
-            train_df, test_df, n_samples_iforest, n_samples_lof)
+        with st.spinner("Running pipeline..."):
+            results = _calculate_results(
+                train_df, test_df, n_samples_iforest, n_samples_lof)
+            st.session_state.hybrid_results = results
+            st.session_state.shap_results = None
+
+    if st.session_state.hybrid_results is not None:
+        results = st.session_state.hybrid_results
+
+        st.info(f"Optimized Thresholds Found: "
+                f"LOF={results['best_thresh_lof']:.2f}, "
+                f"iForest={results['best_thresh_if']:.2f}")
+
+        st.success("Detection Complete!")
+
+        # Metrics
+        _mk_report(test=results['y_test'], pred=results['y_pred_final'])
+        _mk_heatmap(test=results['y_test'], pred=results['y_pred_final'])
 
 
 def _intro() -> None:
@@ -222,8 +278,87 @@ def _intro() -> None:
 
     slides_dir = base / "slides"
 
-    slide_files = sorted(list(slides_dir.glob("unsupervised-hybrid*.png")))
+    all_slides = sorted(list(slides_dir.glob("unsupervised-hybrid*.png")))
+    slide_files = [all_slides[3], all_slides[5]]
+
+    if st.session_state.current_slide >= len(slide_files):
+        st.session_state.current_slide = 0
+
     presenter(slides=slide_files, ran_seed=97, length=14)
+
+
+def _extra_slides() -> None:
+    if 'current_slide' not in st.session_state:
+        st.session_state.current_slide = 0
+
+    base = Path(__file__).resolve().parents[0]
+    slides_dir = base / "slides"
+    all_slides = sorted(list(slides_dir.glob("unsupervised-hybrid*.png")))
+
+    # Remaining slides (all except 2 and 4)
+    slide_files = [s for i, s in enumerate(all_slides) if i not in [3, 5]]
+
+    if st.session_state.current_slide >= len(slide_files):
+        st.session_state.current_slide = 0
+
+    presenter(slides=slide_files, ran_seed=100, length=14)
+
+
+def _shap() -> None:
+    if 'hybrid_results' not in st.session_state or \
+            st.session_state.hybrid_results is None:
+        st.warning("Please train the models first in the 'Training...' tab.")
+        return
+
+    # If we have cached plots, use them
+    if 'shap_results' in st.session_state and \
+            st.session_state.shap_results is not None:
+        st.subheader("SHAP Values - Feature Contribution")
+
+        st.markdown("### Isolation Forest Feature Importance")
+        st.pyplot(st.session_state.shap_results['fig_if'])
+
+        st.markdown("### LOF Feature Importance (Approximate)")
+        st.pyplot(st.session_state.shap_results['fig_lof'])
+        return
+
+    results = st.session_state.hybrid_results
+    iforest = results['iforest_model']
+    x_test = results['x_test_processed']
+    # Use a small sample for visualization speed
+    x_test_sample = x_test[:100]
+
+    st.subheader("SHAP Values - Feature Contribution")
+
+    # 1. Isolation Forest
+    st.markdown("### Isolation Forest Feature Importance")
+    with st.spinner("Calculating SHAP values for Isolation Forest..."):
+        explainer_if = shap.TreeExplainer(iforest)
+        shap_values_if = explainer_if.shap_values(x_test_sample)
+
+        fig_if, _ = plt.subplots()
+        shap.summary_plot(
+            shap_values_if, x_test_sample, feature_names=FEATURES, show=False)
+        st.pyplot(fig_if)
+
+    st.markdown("### LOF Feature Importance (Approximate)")
+    with st.spinner("Calculating SHAP values for LOF (this may be slow)..."):
+        x_train_summary = shap.kmeans(results['x_train_sample'], 10)
+        explainer_lof = shap.KernelExplainer(
+            results['lof_model'].decision_function, x_train_summary)
+        shap_values_lof = explainer_lof.shap_values(x_test_sample)
+
+        fig_lof, _ = plt.subplots()
+        shap.summary_plot(
+            shap_values_lof, x_test_sample,
+            feature_names=FEATURES, show=False)
+        st.pyplot(fig_lof)
+
+    # Cache the figures
+    st.session_state.shap_results = {
+        'fig_if': fig_if,
+        'fig_lof': fig_lof
+    }
 
 
 def _feature() -> None:
@@ -232,7 +367,20 @@ def _feature() -> None:
 
 
 def _param() -> None:
-    pass
+    st.subheader("Model Hyperparameters")
+
+    st.markdown("### Isolation Forest (iForest)")
+    st.markdown("- **n_estimators:** 500")
+    st.markdown("- **max_samples:** 2048")
+    st.markdown("- **contamination:** 0.15")
+    st.markdown("- **random_state:** 42")
+    st.markdown("- **n_jobs:** -1")
+
+    st.markdown("### Local Outlier Factor (LOF)")
+    st.markdown("- **n_neighbors:** 40")
+    st.markdown("- **contamination:** 0.1")
+    st.markdown("- **novelty:** True")
+    st.markdown("- **n_jobs:** -1")
 
 
 def hybrid_model(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
@@ -247,7 +395,9 @@ def hybrid_model(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
 
     page_handlers = {
         MainPages.TRAIN.value: lambda: _train_model(train_df, test_df),
+        MainPages.SHAP.value: _shap,
         MainPages.INTRO.value: _intro,
+        MainPages.EXTRA.value: _extra_slides,
         MainPages.FEATURE.value: _feature,
         MainPages.PARAM.value: _param,
     }
